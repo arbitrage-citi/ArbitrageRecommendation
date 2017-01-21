@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.8/angular.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/angular-resource/1.4.8/angular-resource.js"></script>
+<script type="text/javascript">
+var app=angular.module('myapp',['ngResource']);
+app.config(['$httpProvider', function ($httpProvider) {    
+	$httpProvider.defaults.headers.post['Content-Type'] = 'text/html';
+	
+}]);
+app.controller('MainCtrl',function($scope,$http,$log,$window){
+	  alert("Inside controller");
+
+     $scope.checkLogin=function(){
+    	 $scope.message='';
+	  alert("inside check loginmethod");
+	  $log.info("username:"+$scope.username);
+	  $log.info("password:"+$scope.password);
+	  $http({
+			method : "post",
+			url : "http://localhost:8087/ArbitrageRecommendation/login",
+			params: {
+		    	username: $scope.username,
+		    	password:$scope.password
+		    }
+	       
+		}).then(function(data){
+			$scope.message=data.data;
+			$log.info($scope.message);
+			if(data.data=="Successful"){
+				alert("Inside if");
+				$window.location.href='http://localhost:8087/ArbitrageRecommendation/pages/dashboard.html';
+				
+			    
+			}
+			 else{
+				 $scope.message="Invalid username or password !!!";
+				 alert("inside else");
+				
+			 }
+			
+			
+		});
+	 
+	$scope.username='';
+	$scope.password='';
+	
+	
+	
+}
+});
+</script>
+<meta charset="UTF-8">
+<title>Login</title>
+</head>
+<body data-align="center">
+	<div data-ng-app="myapp" data-ng-controller="MainCtrl">
+		<form >
+			<h1 align="center">Login Page</h1>
+			<table align="center">
+			<tr >
+			<td>Username</td>
+			<td><input type="text" id="username" name="username" placeholder="Enter username" data-ng-model="username"></td>
+			</tr>
+			<tr><td></td></tr>
+			<tr><td></td></tr>
+			<tr>
+			<td>Password</td>
+			<td><input type="password" id="password" name="password" placeholder="Enter password" data-ng-model="password"></td>
+			</tr>
+			<tr><td></td></tr>
+			<tr><td></td></tr>
+			<tr>
+			<td colspan="2" align="center"><input width="" type="submit" data-ng-click="checkLogin()" value="Login"/></td>
+			</tr>
+			<tr><td></td></tr>
+			<tr><td></td></tr>
+			<tr>
+			<td  colspan="2" align="center">{{message}}</td>
+			</tr>
+			</table>
+		</form>
+
+	</div>
+
+
+</body>
+</html>

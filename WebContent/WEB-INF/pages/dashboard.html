@@ -1,0 +1,275 @@
+
+<html>
+<head>
+
+<script
+	src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.4/angular.js"></script>
+
+<title>Arbitrage Recommendation </title>
+<script type="text/javascript">
+	var app = angular.module("StockManagement", []);
+
+	//Controller Part
+	app
+			.controller(
+					"StockController",
+					function($scope, $http) {
+
+						$scope.stocks = [];
+						$scope.stockForm = {
+							id : -1,
+							CName : "",
+							diff : -1,
+							diffper : -1,
+							l_fixN : -1,
+							l_fixB : -1
+
+						};
+
+						//Now load the data from server
+						_refreshStockData();
+
+						//HTTP POST/PUT methods for add/edit stock 
+						// with the help of id, we are going to find out whether it is put or post operation
+
+						$scope.submitStock = function() {
+
+							var method = "";
+							var url = "";
+							if ($scope.stockForm.id == -1) {
+								//Id is absent in form data, it is create new stock operation
+								method = "POST";
+								url = 'rest/stocks';
+							} else {
+								//Id is present in form data, it is edit stock operation
+								method = "PUT";
+								url = 'rest/stocks';
+							}
+
+							$http({
+								method : method,
+								url : url,
+								data : angular.toJson($scope.stockForm),
+								headers : {
+									'Content-Type' : 'application/json'
+								}
+							}).then(_success, _error);
+						};
+
+						//HTTP DELETE- delete stock by Id
+						$scope.saveStock = function(stock) {
+							$http({
+								method : 'PUT',
+								url : 'rest/stocks/saved/' + stock.id
+							}).then(_success, _error);
+							_refreshSavedStockData();
+						};
+
+						function _refreshSavedStockData() {
+							$http(
+									{
+										method : 'GET',
+										url : 'http://localhost:8087/ArbitrageRecommendation/rest/stocks/saved/'
+									}).then(function successCallback(response) {
+								$scope.stocks = response.data;
+							}, function errorCallback(response) {
+								console.log(response.statusText);
+							});
+						}
+
+						/* Private Methods */
+						//HTTP GET- get all stocks collection
+						function _refreshStockData() {
+							$http(
+									{
+										method : 'GET',
+										url : 'http://localhost:8087/ArbitrageRecommendation/rest/stocks'
+									}).then(function successCallback(response) {
+								$scope.stocks = response.data;
+							}, function errorCallback(response) {
+								console.log(response.statusText);
+							});
+						}
+
+						function _success(response) {
+							_refreshStockData();
+							_clearFormData()
+						}
+
+						function _error(response) {
+							console.log(response.statusText);
+						}
+
+						//Clear the form
+						function _clearFormData() {
+							$scope.stockForm.id = -1;
+							$scope.stockForm.CName = "Company";
+							$scope.stockForm.diffper = -1;
+							$scope.stockForm.diff = -1;
+							$scope.stockForm.l_fixN = -1;
+							$scope.stockForm.l_fixB = -1;
+
+						}
+						;
+					});
+</script>
+<style>
+.blue-button {
+	background: #25A6E1;
+	filter: progid: DXImageTransform.Microsoft.gradient( startColorstr='#25A6E1',
+		endColorstr='#188BC0', GradientType=0);
+	padding: 3px 5px;
+	color: #fff;
+	font-family: 'Helvetica Neue', sans-serif;
+	font-size: 12px;
+	border-radius: 2px;
+	-moz-border-radius: 2px;
+	-webkit-border-radius: 4px;
+	border: 1px solid #1A87B9
+}
+
+.red-button {
+	background: #CD5C5C;
+	padding: 3px 5px;
+	color: #fff;
+	font-family: 'Helvetica Neue', sans-serif;
+	font-size: 12px;
+	border-radius: 2px;
+	-moz-border-radius: 2px;
+	-webkit-border-radius: 4px;
+	border: 1px solid #CD5C5C
+}
+
+.red-font {
+	color: red
+}
+
+.blue-font {
+	color: blue
+}
+
+table {
+	font-family: "Helvetica Neue", Helvetica, sans-serif;
+	width: 50%;
+}
+
+caption {
+	text-align: left;
+	color: silver;
+	font-weight: bold;
+	text-transform: uppercase;
+	padding: 5px;
+}
+
+th {
+	background: SteelBlue;
+	color: white;
+}
+
+tbody tr:nth-child(even) {
+	background: WhiteSmoke;
+}
+
+tbody tr td:nth-child(2) {
+	text-align: center;
+}
+
+tbody tr td:nth-child(3), tbody tr td:nth-child(4) {
+	text-align: center;
+	font-family: monospace;
+}
+
+tfoot {
+	background: SeaGreen;
+	color: white;
+	text-align: right;
+}
+
+tfoot tr th:last-child {
+	font-family: monospace;
+}
+
+td, th {
+	border: 1px solid gray;
+	width: 25%;
+	text-align: left;
+	padding: 5px 10px;
+}
+</style>
+<head>
+<body ng-app="StockManagement" ng-controller="StockController">
+	<h1>Arbitrage Opportunity</h1>
+
+	<table>
+		<tr>
+			<th>Company Name</th>
+			<th>Diffper</th>
+			<th>diff</th>
+			<th>l_fixN</th>
+			<th>l_fixB</th>
+			<th>Operations</th>
+			<div>
+		</tr>
+
+		<tr ng-repeat="stock in stocks"
+			ng-if="stock.l_fixB<stock.l_fixN &&(stock.l_fixN>0 || stock.l_fixB>0)"
+			class="red-font">
+			<td>{{ stock.CName }}</td>
+			<td>{{ stock.diffper }}</td>
+			<td>{{ stock.diff }}</td>
+			<td>{{ stock.l_fixN }}</td>
+			<td>{{ stock.l_fixB }}</td>
+
+
+			<td><a ng-click="saveStock(stock)" class="red-button">Save</a></td>
+			<br>
+
+		</tr>
+		<tr ng-repeat="stock in stocks"
+			ng-if="stock.l_fixB>stock.l_fixN &&(stock.l_fixN>0 || stock.l_fixB>0) "
+			class="blue-font">
+			<td>{{ stock.CName }}</td>
+			<td>{{ stock.diffper }}</td>
+			<td>{{ stock.diff }}</td>
+			<td>{{ stock.l_fixN }}</td>
+			<td>{{ stock.l_fixB }}</td>
+
+
+			<td><a ng-click="saveStock(stock)" class="red-button">Save</a></td>
+
+		</tr>
+		</div>
+
+	</table>
+
+
+
+	<br>
+	<br>
+	<br>
+	<h3>Saved Stocks</h3>
+	<table>
+		<tr>
+			<th>Company Name</th>
+			<th>Diffper</th>
+			<th>diff</th>
+			<th>l_fixN</th>
+			<th>l_fixB</th>
+		</tr>
+
+		<tr ng-repeat="stock in stocks/saved/">
+			<td>{{ stock.CName }}</td>
+			<td>{{ stock.diffper }}</td>
+			<td>{{ stock.diff }}</td>
+			<td>{{ stock.l_fixN }}</td>
+			<td>{{ stock.l_fixB }}</td>
+		</tr>
+
+	</table>
+
+
+
+
+
+</body>
+</html>
